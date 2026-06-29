@@ -1,0 +1,218 @@
+import React, { useState, useMemo } from 'react';
+import { Copy, RefreshCcw, CheckCircle, ChevronRight, ChevronLeft } from 'lucide-react';
+
+// Dữ liệu câu hỏi
+const SECTIONS = [
+  {
+    id: 'ban_than',
+    title: 'Mối quan hệ với bản thân',
+    questions: [
+      { id: 1, text: 'Tôi thường cảm thấy mệt mỏi trong ngày và không được nghỉ ngơi đầy đủ.', inverse: true },
+      { id: 2, text: 'Tôi quá bận hoặc quá mệt đến mức bỏ bữa, ăn uống thất thường hoặc lựa chọn thực phẩm không lành mạnh.', inverse: true },
+      { id: 3, text: 'Tôi cảm thấy mình đang bị kéo căng giữa công việc và cuộc sống cá nhân, khiến những sở thích hay nhu cầu riêng bị gác lại.', inverse: true },
+      { id: 4, text: 'Tôi nhận thấy mình dễ cáu gắt, khó chịu hoặc mất kiên nhẫn hơn với người thân hay đồng nghiệp.', inverse: true },
+      { id: 5, text: 'Tôi mong muốn có nhiều thời gian hơn cho gia đình và bạn bè.', inverse: true },
+      { id: 6, text: 'Tôi cảm thấy không còn nhiều thời gian cho cuộc sống ngoài công việc và các trách nhiệm cá nhân.', inverse: true },
+      { id: 7, text: 'Tôi thường bỏ lỡ những dịp gặp gỡ bạn bè và cảm thấy mình dần xa cách với các mối quan hệ xã hội.', inverse: true },
+      { id: 8, text: 'Tôi khó có thể tạm gác công việc sang một bên và vẫn tiếp tục lo lắng về công việc ngay cả khi không làm việc.', inverse: true },
+      { id: 9, text: 'Tôi thường xuyên làm việc muộn, làm cuối tuần hoặc làm đêm để theo kịp công việc và các trách nhiệm khác.', inverse: true },
+      { id: 10, text: 'Trách nhiệm gia đình và áp lực công việc thường xung đột với nhau, khiến tôi cảm thấy căng thẳng và lúng túng.', inverse: true },
+      { id: 11, text: 'Tôi biết dành thời gian để nghỉ ngơi và phục hồi năng lượng.', inverse: false },
+      { id: 12, text: 'Tôi biết đặt ranh giới lành mạnh giữa công việc và đời sống cá nhân.', inverse: false },
+    ]
+  },
+  {
+    id: 'dong_nghiep',
+    title: 'Mối quan hệ với đồng nghiệp',
+    questions: [
+      { id: 1, text: 'Tôi chú tâm lắng nghe khi người khác nói với mình.', inverse: false },
+      { id: 2, text: 'Tôi thường tránh giao tiếp với đồng nghiệp và chỉ trao đổi khi thật cần thiết.', inverse: true },
+      { id: 3, text: 'Tôi sẵn sàng hỗ trợ và giúp đỡ đồng nghiệp khi có thể.', inverse: false },
+      { id: 4, text: 'Tôi ngại nhờ người khác giúp đỡ khi gặp khó khăn.', inverse: true },
+      { id: 5, text: 'Tôi khó tiếp nhận những góp ý hoặc phê bình dành cho mình.', inverse: true },
+      { id: 6, text: 'Tôi biết cách đưa ra góp ý một cách khéo léo và tôn trọng.', inverse: false },
+      { id: 7, text: 'Tôi thường cảm thấy khó chịu hoặc bực bội với đồng nghiệp.', inverse: true },
+      { id: 8, text: 'Tôi tin tưởng phần lớn đồng nghiệp của mình.', inverse: false },
+      { id: 9, text: 'Tôi thích làm theo cách của mình và không dễ thỏa hiệp.', inverse: true },
+      { id: 10, text: 'Tôi thường không bày tỏ quan điểm vì sợ người khác không đồng tình.', inverse: true },
+      { id: 11, text: 'Tôi giữ được sự bình tĩnh và không dễ nổi nóng với đồng nghiệp.', inverse: false },
+      { id: 12, text: 'Tôi ghi nhận và trân trọng sự đóng góp của người khác.', inverse: false },
+    ]
+  },
+  {
+    id: 'moi_truong',
+    title: 'Mối quan hệ với môi trường làm việc',
+    questions: [
+      { id: 1, text: 'Tôi giữ gìn khu vực làm việc của mình gọn gàng và ngăn nắp.', inverse: false },
+      { id: 2, text: 'Tôi có ý thức giữ gìn không gian và tài sản chung nơi làm việc.', inverse: false },
+      { id: 3, text: 'Tôi sử dụng các nguồn lực và trang thiết bị chung một cách có trách nhiệm.', inverse: false },
+      { id: 4, text: 'Khi nhận thấy những vấn đề trong môi trường làm việc, tôi chủ động tìm cách cải thiện.', inverse: false },
+      { id: 5, text: 'Tôi thường bỏ qua những bất cập trong môi trường làm việc nếu chúng không ảnh hưởng trực tiếp đến mình.', inverse: true },
+      { id: 6, text: 'Tôi góp phần tạo nên bầu không khí tích cực và dễ chịu tại nơi làm việc.', inverse: false },
+      { id: 7, text: 'Tôi cân nhắc tác động của hành vi của mình đến sự thoải mái và thuận tiện của người khác.', inverse: false },
+      { id: 8, text: 'Tôi trân trọng những nỗ lực nhằm xây dựng một môi trường làm việc tích cực.', inverse: false },
+      { id: 9, text: 'Tôi lên tiếng hoặc đề xuất khi nhận thấy môi trường làm việc có thể được cải thiện.', inverse: false },
+      { id: 10, text: 'Tôi cố gắng để lại không gian chung trong tình trạng tốt hơn so với khi mình sử dụng.', inverse: false },
+      { id: 11, text: 'Tôi có khả năng thích nghi và duy trì tinh thần tích cực ngay cả khi điều kiện làm việc chưa thực sự thuận lợi.', inverse: false },
+      { id: 12, text: 'Tôi cảm thấy mình có trách nhiệm và sự gắn bó đối với môi trường làm việc của mình.', inverse: false },
+    ]
+  },
+  {
+    id: 'cong_viec',
+    title: 'Mối quan hệ với công việc',
+    questions: [
+      { id: 1, text: 'Tôi chủ động chịu trách nhiệm đối với công việc của mình.', inverse: false },
+      { id: 2, text: 'Tôi luôn tìm kiếm cách thức để cải thiện hiệu quả làm việc.', inverse: false },
+      { id: 3, text: 'Tôi cố gắng tìm thấy ý nghĩa và giá trị trong công việc mình đang làm.', inverse: false },
+      { id: 4, text: 'Tôi thường chỉ tập trung hoàn thành nhiệm vụ mà ít suy nghĩ về giá trị hoặc mục đích của công việc.', inverse: true },
+      { id: 5, text: 'Tôi chủ động hành động thay vì chỉ chờ đợi hướng dẫn hoặc yêu cầu từ người khác.', inverse: false },
+      { id: 6, text: 'Tôi dành thời gian để học hỏi và phát triển những kỹ năng giúp mình làm việc tốt hơn.', inverse: false },
+      { id: 7, text: 'Tôi vẫn duy trì sự cam kết và trách nhiệm ngay cả khi công việc trở nên khó khăn.', inverse: false },
+      { id: 8, text: 'Tôi cố gắng hiểu công việc của mình đóng góp như thế nào vào mục tiêu chung của tổ chức.', inverse: false },
+      { id: 9, text: 'Tôi thường trì hoãn hoặc né tránh những nhiệm vụ mà mình thấy khó khăn hoặc không hứng thú.', inverse: true },
+      { id: 10, text: 'Tôi sẵn sàng đóng góp nhiều hơn phạm vi công việc được giao khi cần thiết.', inverse: false },
+      { id: 11, text: 'Tôi chủ động tìm kiếm cơ hội học hỏi và phát triển thông qua công việc.', inverse: false },
+      { id: 12, text: 'Tôi thường suy ngẫm về việc liệu công việc hiện tại có phù hợp với những giá trị và định hướng của bản thân hay không.', inverse: false },
+    ]
+  }
+];
+
+export default function App() {
+  const [step, setStep] = useState('intro'); // intro, guide, quiz, result
+  const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
+  const [answers, setAnswers] = useState({});
+  const [error, setError] = useState('');
+
+  const handleAnswer = (sectionId, questionId, val) => {
+    setAnswers(prev => ({ ...prev, [`${sectionId}-${questionId}`]: val }));
+    setError('');
+  };
+
+  const calculateResults = () => {
+    const results = SECTIONS.map(sec => {
+      let rawScore = 0;
+      sec.questions.forEach(q => {
+        const val = answers[`${sec.id}-${q.id}`] || 0;
+        rawScore += q.inverse ? (6 - val) : val;
+      });
+      const percent = Math.round(((rawScore - 12) / 48) * 100);
+      return { title: sec.title, rawScore, percent, id: sec.id };
+    });
+    return results.sort((a, b) => b.percent - a.percent);
+  };
+
+  const renderIntro = () => (
+    <div className="max-w-xl mx-auto text-center space-y-6 animate-in fade-in duration-500">
+      <h1 className="text-3xl font-bold text-emerald-900">Mối quan hệ trong công sở</h1>
+      <p className="text-gray-600 italic">“Hạnh phúc nơi làm việc không chỉ là điều ta nhận được từ tổ chức, mà còn là cách ta chủ động xây dựng mối quan hệ với bản thân, với đồng nghiệp, với môi trường làm việc và với công việc của mình.”</p>
+      <div className="bg-emerald-50 p-4 rounded-lg text-sm text-emerald-800">
+        Đây là một công cụ tự phản tư, không phải bài kiểm tra đánh giá năng lực, chẩn đoán tâm lý hay đo lường tuyệt đối mức độ hạnh phúc.
+      </div>
+      <button onClick={() => setStep('guide')} className="bg-emerald-700 text-white px-8 py-3 rounded-full hover:bg-emerald-800 transition">Bắt đầu khảo sát</button>
+    </div>
+  );
+
+  const renderGuide = () => (
+    <div className="max-w-xl mx-auto space-y-6">
+      <h2 className="text-2xl font-bold text-emerald-900">Hướng dẫn</h2>
+      <p>Với mỗi phát biểu, hãy chọn mức độ phản ánh trải nghiệm của bạn trong thời gian gần đây (1 = Không bao giờ, 5 = Luôn luôn).</p>
+      <button onClick={() => setStep('quiz')} className="w-full bg-emerald-700 text-white py-3 rounded-xl hover:bg-emerald-800">Tôi đã hiểu, bắt đầu</button>
+    </div>
+  );
+
+  const renderQuiz = () => {
+    const sec = SECTIONS[currentSectionIndex];
+    return (
+      <div className="max-w-2xl mx-auto space-y-6">
+        <div className="flex justify-between items-center text-sm font-medium text-emerald-800">
+          <span>Phần {currentSectionIndex + 1}/4: {sec.title}</span>
+          <span>{Math.round(((currentSectionIndex) * 12 + sec.questions.filter(q => answers[`${sec.id}-${q.id}`]).length) / 48 * 100)}%</span>
+        </div>
+        <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
+          <div className="bg-emerald-600 h-full transition-all" style={{ width: `${((currentSectionIndex * 12 + sec.questions.filter(q => answers[`${sec.id}-${q.id}`]).length) / 48) * 100}%` }}></div>
+        </div>
+        <div className="space-y-4">
+          {sec.questions.map(q => (
+            <div key={q.id} className="bg-white p-4 rounded-xl shadow-sm border border-emerald-100">
+              <p className="mb-3 text-gray-800">{q.text}</p>
+              <div className="flex justify-between gap-2">
+                {[1, 2, 3, 4, 5].map(v => (
+                  <button key={v} onClick={() => handleAnswer(sec.id, q.id, v)} className={`w-10 h-10 rounded-full ${answers[`${sec.id}-${q.id}`] === v ? 'bg-emerald-600 text-white' : 'bg-gray-100 hover:bg-emerald-100'}`}>
+                    {v}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+        {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+        <div className="flex justify-between pt-4">
+          <button disabled={currentSectionIndex === 0} onClick={() => setCurrentSectionIndex(prev => prev - 1)} className="px-4 py-2 text-emerald-700"><ChevronLeft className="inline"/> Quay lại</button>
+          {currentSectionIndex < 3 ? (
+            <button onClick={() => {
+              if (sec.questions.every(q => answers[`${sec.id}-${q.id}`])) setCurrentSectionIndex(prev => prev + 1);
+              else setError("Bạn vui lòng hoàn thành tất cả câu hỏi trước khi tiếp tục.");
+            }} className="px-6 py-2 bg-emerald-700 text-white rounded-lg">Tiếp tục <ChevronRight className="inline"/></button>
+          ) : (
+            <button onClick={() => {
+              if (sec.questions.every(q => answers[`${sec.id}-${q.id}`])) setStep('result');
+              else setError("Bạn vui lòng hoàn thành tất cả câu hỏi trước khi xem kết quả.");
+            }} className="px-6 py-2 bg-emerald-800 text-white rounded-lg">Xem kết quả</button>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderResult = () => {
+    const results = calculateResults();
+    const lowest = results[results.length - 1];
+    
+    const copyResult = () => {
+      let text = "Bản đồ mối quan hệ trong công sở của bạn:\n" + results.map(r => `${r.title}: ${r.percent}%`).join('\n');
+      navigator.clipboard.writeText(text);
+      alert("Đã sao chép kết quả!");
+    };
+
+    return (
+      <div className="max-w-2xl mx-auto space-y-8 animate-in zoom-in duration-500">
+        <h2 className="text-2xl font-bold text-center text-emerald-900">Bản đồ mối quan hệ của bạn</h2>
+        {results.map(r => (
+          <div key={r.id} className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="font-semibold">{r.title}</span>
+              <span>{r.rawScore}/60 — {r.percent}%</span>
+            </div>
+            <div className="w-full bg-gray-100 h-3 rounded-full overflow-hidden">
+              <div className="bg-emerald-500 h-full" style={{ width: `${r.percent}%` }}></div>
+            </div>
+          </div>
+        ))}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-emerald-100">
+          <h3 className="font-bold mb-2">Gợi ý suy ngẫm cho: {lowest.title}</h3>
+          <ul className="list-disc ml-5 space-y-2 text-gray-700 text-sm">
+            {lowest.id === 'ban_than' && ["Điều gì đang lấy đi năng lượng của tôi nhiều nhất?", "Tôi đang bỏ quên nhu cầu nào của chính mình?", "Một hành động nhỏ nào có thể giúp tôi phục hồi năng lượng trong tuần này?"]}
+            {lowest.id === 'dong_nghiep' && ["Tôi đang né tránh điều gì trong các mối quan hệ công việc?", "Tôi có thể bắt đầu xây dựng sự kết nối bằng hành động nhỏ nào?", "Tôi có thể lắng nghe hoặc nhờ hỗ trợ từ ai nhiều hơn?"]}
+            {lowest.id === 'moi_truong' && ["Tôi đang xem nơi làm việc là một không gian mình cùng kiến tạo hay chỉ là nơi mình sử dụng?", "Tôi có thể đóng góp điều gì để môi trường này trở nên dễ chịu hơn?", "Một thay đổi nhỏ nào trong không gian chung có thể tạo tác động tích cực?"]}
+            {lowest.id === 'cong_viec' && ["Tôi còn nhìn thấy ý nghĩa trong công việc mình đang làm không?", "Điều gì khiến tôi cảm thấy có giá trị nhất trong công việc?", "Tôi có thể chủ động cải thiện cách làm việc của mình ở điểm nào?"]}
+          </ul>
+        </div>
+        <div className="flex gap-4 justify-center">
+          <button onClick={() => window.location.reload()} className="flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-full text-gray-700"><RefreshCcw size={16}/> Làm lại</button>
+          <button onClick={copyResult} className="flex items-center gap-2 bg-emerald-700 text-white px-4 py-2 rounded-full"><Copy size={16}/> Sao chép</button>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-stone-50 text-stone-800 p-6 font-sans">
+      <div className="max-w-3xl mx-auto">
+        {step === 'intro' && renderIntro()}
+        {step === 'guide' && renderGuide()}
+        {step === 'quiz' && renderQuiz()}
+        {step === 'result' && renderResult()}
+      </div>
+    </div>
+  );
+}
